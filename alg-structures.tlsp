@@ -1,0 +1,40 @@
+# General algebraic structures
+
+# Introduced forms
+# 
+# define-generic : define a general type-generic thing
+#	(define-generic <name> <parameters> <body>)
+#		name : the name to bind the thing to
+#		parameters : the parameters to be generic over
+#		body : an expression referring to the generic parameters
+#
+# type : define an anonymous type-alias ( Aliased as \\ )
+#	(type <body>)
+#		body : the type to serve as an alias for
+
+# A set that has one distinct member
+(define-typeclass pointed-set (:f ()) (:a ()) 
+	(
+		# Get the distinct member of this set
+		(op get-point () (a))
+	)
+)
+
+# A set with a single closed unary operation
+(define-typeclass unary-system (:f ()) (:a ()) 
+	(
+		# Apply the operation to the specified member of the set
+		(op unary-op (:v a) (a))
+	)
+)
+
+# A unary system where the set is pointed
+(define-typeclass pointed-unary-system 
+	(:f (has-both 
+			(has-typeclass pointed-set)
+			(has-typeclass unary-system)))
+	(:a ()) 
+	(
+	# f already has both of the desired properties
+	)
+)

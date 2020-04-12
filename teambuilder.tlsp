@@ -1,0 +1,9 @@
+# A queuing group, containing one or more people to be paired together on a team
+(define-typeclass queue-group (:A ()) () 
+	(
+		# Get the number of people currently in this queuing group
+		(op get-count () int)
+		# Get the list of people currently in this queueing group
+		(op get-people () (| list string))
+	)
+)

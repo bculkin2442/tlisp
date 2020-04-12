@@ -1,0 +1,15 @@
+# Forms defined
+#  define-typeclass : create a new typeclass
+#	(define-typeclass <name> <defined-on> <parameters> <body>)
+#		name : the name of the typeclass being defined
+#		defined-on : The type the typeclass is being created on
+#		parameters : Any generic parameters this typeclass has defined
+#		body : the actual definition of this typeclass
+#
+#  op : define a typeclass operation
+#	(op <name> <argument> <return>)
+#		name : the name of the operation being defined
+#		argument : the argument of this operation
+#		return : the type this operation returns
+
+

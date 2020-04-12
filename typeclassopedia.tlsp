@@ -1,0 +1,126 @@
+# introduction of basic forms
+# define-typeclass : create a new typeclass
+#	(define-typeclass <name> <defined-on> <parameters> <body>)
+#		name : name of the typeclass
+#		defined-on : the type the typeclass is defined for (a generic parameter)
+#		parameters : any required generic parameters
+#		body : a list of op, generic-op & alias-op forms
+#
+# generic-op : create a generic operator in a typeclass
+#	(generic-op <name> <parameters> <argument> <return>)
+#		name : name of this generic operator
+#		parameters : any required type parameters
+#		argument : the type and name of the argument
+#		return : the type this op returns
+#
+# op : create a operator in a typeclass
+#	(op <name> <argument> <return>)
+#		name : name of this generic operator
+#		argument : the type and name of the argument
+#		return : the type this op returns
+# 
+# alias-op: alias a name to an operator
+#	(alias-op <op-name> <alias>)
+#		op-name: name of the operator
+#		alias: aliased name of the operator
+#
+# type-function : create a function type from two distinct types ( aliased to -> )
+#	(type-function <argument> <return>)
+#		arguments : the type of the argument
+#		return : the type returned from the function
+#
+# bind : bind a actual type to a generic type ( aliased to | )
+#	(bind <type> <bindings>)
+#		type : the type to bind parameters to
+#		bindings : the types to bind parameters to
+#
+# has-typeclass : constrain a type to only those that implement the given typeclass
+#	(has-typeclass <typeclass>)
+#		typeclass : the typeclass that must be implemented
+# has-both : constrain a type to obey two constraints
+#	(has-both <left> <right>)
+#		left : the first constraint to obey
+#		right : the second constraint to obey
+
+# Allows two objects of the same kind to be compared
+(define-typeclass Equatable (:f ()) (:a ()) (
+	# Check if two values equal each other ( Aliased as = )
+	(op equals (:l a) (bool))
+	(alias-op :equals :=)
+)
+
+# A context of some kind that contains a value of some type
+(define-typeclass Functor (:f ()) (:a ()) (
+	# Map a function over a value in this functor
+	(generic-op fmap (:b ()) (-> a b) (-> (| f a) (| f b)))
+	# fmap must satisfy the following constraints
+	#	 (fmap id) = id
+	#		Mapping the identity function doesn't do anything
+	#	 (fmap ((compose g) h) = ((compose ( fmap g )) ( fmap h ))
+	#		Mapping a composition is the same as composing a mapping
+)
+
+# A functor that can put a value into a default context
+(define-typeclass Pointed (:f (has-typeclass Functor)) (:a ()) (
+	# Put a value into a default context
+	#	Also called <$>
+	(op pure (:v a) (| f a))
+	(alias-op :pure :<$>)
+)
+
+# A pointed functor that can apply a function stored inside a context
+(define-typeclass Applicative (:f (has-typeclass Pointed)) (:a ()) (
+	# Apply a function in a context, to a value in a context
+	# 	Also called <*>
+	(generic-op apply (:b ()) (:func | f (-> a b)) (-> (| f a) (| f b)))
+	(alias-op :apply :<*>)
+	# apply must satisfy the following constraint
+	#	( (fmap g ) x) = ( ( apply (pure g) ) x)
+	#		Mapping a function is the same as contextualizing the function and applying it
+)
+
+# A applicative functor that can flatten a nested context
+(define-typeclass Monad (:f (has-typeclass Applicative)) (:a ()) (
+	(op join (:nested | f (| f a)) (| f a))
+	# Can also be implemented with
+	#	(generic-op bind (:b ()) (| f a) (-> (-> a (| f b)) (| m b)))
+	#
+	# join must satisfy the following constraints
+	#	( ( compose join) (fmap join)) = ( (compose join) join)
+	#		join does not change the context
+	#	( ( compose join) (fmap return)) = ( (compose join) return) = id 
+	#		join and return are inverse
+)
+
+# A way to combine two monads together
+# 	NOTE: Monad transformers are not in general commutative
+(define-typeclass MonadTransformer (:f (has-typeclass Monad)) (:a ())  (
+ 	(generic-op lift (:m (has-typeclass Monad)) (:mon | m a) (| t (| m a)))
+)
+
+# A set with a identity element and a associative binary operation
+(define-typeclass Monoid (:f ()) () (
+	(op identity () (f))
+	(op combine (:l f) (-> f f))
+	# identity and combine must satisy the following
+	#	( ( combine identity) x) = x : identity is left identity --|
+	#								   -- identity is identity element of combine
+	#	( ( combine x) identity) = x : identity is right identity--|
+	#	( ( combine ( ( combine x) y) ) z) = ( ( combine x) ( (combine y) z)) : combine is associative
+)
+
+# A container of elements that can be reduced to a single value
+(define-typeclass Foldable (:f ()) (:a ()) (
+	(generic-op foldMap (:t (has-typeclass Monoid)) (:fold-func -> a t) (-> (| t a) m))
+)
+
+# A foldable functor than can commute functors
+(define-typeclass Traversable 
+	(:f 
+		(has-both (has-typeclass Foldable)
+		(has-typeclass Functor))
+	) (:a ()) (
+		(generic-op sequenceAp (:t (has-typeclass Applicative)) (:traverse | t (| f a)) (| f (| t a)))
+)
+
+# Pick this up later. Left off at Category (mainly due to language issues)

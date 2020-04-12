@@ -1,0 +1,39 @@
+# Should satisfy the following
+#		fmap id = id ; Preservation of identity
+#		fmap (compose g h) = compose (fmap g) (fmap h) ; Preservation of structure
+(define-group Functor (:M ()) (:A ()) (
+	(generic-op fmap 
+		(:B ()) 
+		(:a (type-function A B)) 
+		(type-function (bind M A) (bind M B))
+		()
+	)	
+))
+
+(define-group Pointed (:M (has-group Functor)) (:A ()) (
+	(op pure (:a A) (bind M A))
+))
+
+# Should satisfy the following
+#		fmap g x = aply (pure g) x 
+#			fmap decomposition - breaks down into introduce into context and apply in context
+(define-group Applicative (:M (has-group Pointed) (:A ()) (
+	; The proper name for this is <*>
+	(generic-op apply (:B ()) (:a (bind M (type-function A B))) (type-function (bind M A) (bind M B))
+))
+
+
+(define-group Monad (:M (has-group Applicative)) (:A ()) (
+	(generic-op bind (:B ()) (:a (bind M A)) (type-function (type-function A (bind M B)) (bind M B))
+	# Can also implement with the following
+	#		(op join (:a (bind M (bind M A))) (bind M A))
+))
+
+# Should satisfy the following
+#		mappend mempty x = x ; mempty is a identity
+#		mappend x mempty = x ; mempty is an identity
+#		mappend (mappend x y) z = mappend x (mappend y z) ; mappend is associative
+(define-group Monoid (:M ()) (:A ()) (
+	(op mempty () (A))
+	(op mappend (:a A) (type-function A A))
+))
